@@ -21,6 +21,11 @@ export default defineConfig(({ mode }) => {
                 allow: ['.', 'node_modules'],
             },
         },
+        // --- THIS IS THE NEW FIX ---
+        preview: {
+            allowedHosts: true,
+        },
+        // ---------------------------
         build: {
             outDir: 'dist',
             emptyOutDir: true,
