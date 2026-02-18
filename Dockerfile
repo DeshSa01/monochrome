@@ -1,29 +1,31 @@
-# Node Slim (Debian)
+# Start with Debian Slim (reliable for builds)
 FROM node:lts-slim
 
 WORKDIR /app
 
-# 1. Install system tools (git is often needed for dependencies)
+# 1. Force Development mode so tools install correctly
+# This overrides any settings from Portainer during the build
+ENV NODE_ENV=development
+
+# 2. Install system tools
 RUN apt-get update && apt-get install -y git wget python3 make g++ && rm -rf /var/lib/apt/lists/*
 
-# 2. Copy package file
+# 3. Copy ONLY package.json (ignore old lockfiles)
 COPY package.json ./
 
-# 3. FORCE install ALL dependencies (including dev tools like Vite)
-# The --production=false flag is the critical fix here.
-RUN npm install --production=false
+# 4. Install ALL dependencies
+RUN npm install
 
-# 4. Copy source code
+# 5. Copy source code
 COPY . .
 
-# 5. Build the project (Vite should now be found)
+# 6. Build the project
+# This will now work because NODE_ENV is 'development'
 RUN npm run build
 
-# 6. Clean up: Now we can remove dev tools to save space (Optional, but good practice)
-RUN npm prune --production
-
-# 7. Setup runtime
+# 7. Switch to Production for the actual running app
 ENV NODE_ENV=production
+
 EXPOSE 4173
 
 # 8. Start the app
