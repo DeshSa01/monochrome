@@ -4,7 +4,7 @@ FROM node:lts-slim
 WORKDIR /app
 
 # wget is needed for Docker healthcheck
-RUN apk add --no-cache wget
+RUN apt-get update && apt-get install -y wget && rm -rf /var/lib/apt/lists/*
 
 # Copy package files first for caching
 COPY package.json package-lock.json ./
