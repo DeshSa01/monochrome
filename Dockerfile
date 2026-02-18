@@ -1,32 +1,30 @@
-# Start with Debian Slim (reliable for builds)
-FROM node:lts-slim
+# 1. Use the full Node.js image (Bookworm)
+# This is larger (~1GB) but includes all system libraries, preventing 'missing library' errors.
+FROM node:22-bookworm
 
 WORKDIR /app
 
-# 1. Force Development mode so tools install correctly
-# This overrides any settings from Portainer during the build
-ENV NODE_ENV=development
+# 2. Install system updates
+RUN apt-get update && apt-get install -y git && rm -rf /var/lib/apt/lists/*
 
-# 2. Install system tools
-RUN apt-get update && apt-get install -y git wget python3 make g++ && rm -rf /var/lib/apt/lists/*
-
-# 3. Copy ONLY package.json (ignore old lockfiles)
+# 3. Copy package files
 COPY package.json ./
 
-# 4. Install ALL dependencies
-RUN npm install
+# 4. Install dependencies with aggressive flags
+# --include=dev: forces dev tools (Vite) to install
+# -g vite: installs Vite globally just in case the local link fails
+RUN npm install --include=dev && npm install -g vite
 
-# 5. Copy source code
+# 5. Copy the rest of the source code
 COPY . .
 
 # 6. Build the project
-# This will now work because NODE_ENV is 'development'
-RUN npm run build
+# We use 'npx vite build' to explicitly look for the binary
+RUN npx vite build
 
-# 7. Switch to Production for the actual running app
-ENV NODE_ENV=production
-
+# 7. Expose the port
 EXPOSE 4173
 
 # 8. Start the app
-CMD ["npm", "run", "preview", "--", "--host", "0.0.0.0"]
+# We use 'npx vite preview' because the standard 'npm run preview' might fail if it can't find the local bin
+CMD ["npx", "vite", "preview", "--host", "0.0.0.0"]
