@@ -3,13 +3,13 @@ FROM node:lts-slim
 
 WORKDIR /app
 
-# wget is needed for Docker healthcheck
-RUN apt-get update && apt-get install -y wget && rm -rf /var/lib/apt/lists/*
+# Install system dependencies
+RUN apt-get update && apt-get install -y wget python3 make g++ && rm -rf /var/lib/apt/lists/*
 
-# Copy package files first for caching
-COPY package.json package-lock.json ./
+# Copy ONLY package.json (We intentionally SKIP package-lock.json)
+COPY package.json ./
 
-# Install dependencies
+# Install dependencies FRESH (generates a new lockfile for Debian)
 RUN npm install
 
 # Copy the rest of the project
