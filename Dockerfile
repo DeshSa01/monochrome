@@ -1,5 +1,5 @@
 # Node Alpine -- multi-arch (amd64 + arm64)
-FROM node:lts-alpine
+FROM node:lts-slim
 
 WORKDIR /app
 
