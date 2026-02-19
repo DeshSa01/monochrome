@@ -1,54 +1,42 @@
-// Amazon Music Parser Implementation
+async function parseAmazonMusic(csvText, api, onProgress) {
+    // Validate format
+    const isValid = validateAmazonMusicFormat(csvText);
+    if (!isValid) {
+        throw new Error("Invalid Amazon Music format");
+    }
 
-// Function to parse Amazon Music CSV data
-function parseAmazonMusic(csvData, headerMapping, progressCallback) {
-    const parsedData = [];
-    const rows = csvData.split('\n');
-    const headers = rows[0].split(',');
-
-    rows.slice(1).forEach((row, index) => {
-        const columns = row.split(/,(?=(?:[^"]*"[^"]*")*[^"]*$)/);
-        const entry = {};
-        headers.forEach((header, i) => {
-            if (headerMapping[header]) {
-                entry[headerMapping[header]] = columns[i].replace(/"/g, '');
+    const tracks = parseCSV(csvText); // Implement CSV parsing logic
+    for (let i = 0; i < tracks.length; i++) {
+        const track = tracks[i];
+        let result;
+        try {
+            // Attempt search by ISRC
+            result = await api.searchByISRC(track.isrc);
+            if (!result) {
+                // Fallback to title + artist search
+                result = await api.searchByTitleAndArtist(track.title, track.artist);
             }
-        });
-        parsedData.push(entry);
-        progressCallback(index + 1, rows.length - 1);
-    });
-    return parsedData;
+            preserveMetadata(result, track);
+            onProgress(i / tracks.length);
+        } catch (error) {
+            console.error(`Error processing track: ${track.title}, ${track.artist}`, error);
+        }
+    }
 }
 
-// Function to validate format of Amazon Music data
-function validateAmazonMusicFormat(data) {
-    // Placeholder for validation logic
-    // Implement necessary checks based on expected format
-    return true; // return false if validation fails
+function validateAmazonMusicFormat(csvText) {
+    const requiredColumns = ['title', 'artist', 'isrc'];
+    const headers = csvText.split('\n')[0].split(',');
+    return requiredColumns.every(column => headers.includes(column));
 }
 
-// Helper function to detect Amazon Music format
-function isAmazonMusicFormat(data) {
-    // Simple detection mechanism based on initial row or headers
-    return data.startsWith('ISRC'); // Adjust this based on actual expected format
+function preserveMetadata(result, track) {
+    result.amazonId = track.amazonId;
+    result.isrc = track.isrc;
+    result.playlistName = track.playlistName;
 }
 
-// Preservation of Amazon metadata for sync features
-function preserveAmazonMetadata(data) {
-    // Logic for preserving metadata for future sync
-}
-
-// Example usage:
-const csvData = `ISRC,Title,Artist\nUSXYZ1234567,Song Title,Artist Name`;
-const headerMapping = { 'ISRC': 'isrc', 'Title': 'title', 'Artist': 'artist' };
-const progressCallback = (current, total) => {
-    console.log(`Parsed ${current} of ${total} rows.`);
-};
-
-if (isAmazonMusicFormat(csvData) && validateAmazonMusicFormat(csvData)) {
-    const parsed = parseAmazonMusic(csvData, headerMapping, progressCallback);
-    preserveAmazonMetadata(parsed);
-    console.log(parsed);
-} else {
-    console.error('Invalid Amazon Music format.');
+function parseCSV(csvText) {
+    // Implement robust CSV parsing, handling quotes and errors for missing columns
+    // Return an array of track objects
 }
