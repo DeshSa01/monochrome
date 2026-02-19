@@ -1602,7 +1602,6 @@ export const sidebarSectionSettings = {
     SHOW_UNRELEASED_KEY: 'sidebar-show-unreleased',
     SHOW_DONATE_KEY: 'sidebar-show-donate',
     SHOW_SETTINGS_KEY: 'sidebar-show-settings',
-    SHOW_ACCOUNT_KEY: 'sidebar-show-account',
     SHOW_ABOUT_KEY: 'sidebar-show-about',
     SHOW_DOWNLOAD_KEY: 'sidebar-show-download',
     SHOW_DISCORD_KEY: 'sidebar-show-discord',
@@ -1614,7 +1613,6 @@ export const sidebarSectionSettings = {
         'sidebar-nav-unreleased',
         'sidebar-nav-donate',
         'sidebar-nav-settings',
-        'sidebar-nav-account',
         'sidebar-nav-about-bottom',
         'sidebar-nav-download-bottom',
         'sidebar-nav-discordbtn',
@@ -1701,19 +1699,6 @@ export const sidebarSectionSettings = {
         } else {
             localStorage.removeItem(this.SHOW_SETTINGS_KEY);
         }
-    },
-
-    shouldShowAccount() {
-        try {
-            const val = localStorage.getItem(this.SHOW_ACCOUNT_KEY);
-            return val === null ? true : val === 'true';
-        } catch {
-            return true;
-        }
-    },
-
-    setShowAccount(enabled) {
-        localStorage.setItem(this.SHOW_ACCOUNT_KEY, enabled ? 'true' : 'false');
     },
 
     shouldShowAbout() {
@@ -1812,7 +1797,6 @@ export const sidebarSectionSettings = {
             { id: 'sidebar-nav-unreleased', check: this.shouldShowUnreleased() },
             { id: 'sidebar-nav-donate', check: this.shouldShowDonate() },
             { id: 'sidebar-nav-settings', check: this.shouldShowSettings() },
-            { id: 'sidebar-nav-account', check: this.shouldShowAccount() },
             { id: 'sidebar-nav-about-bottom', check: this.shouldShowAbout() },
             { id: 'sidebar-nav-download-bottom', check: this.shouldShowDownload() },
             { id: 'sidebar-nav-discordbtn', check: this.shouldShowDiscord() },
