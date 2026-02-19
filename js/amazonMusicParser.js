@@ -1,42 +1,49 @@
-async function parseAmazonMusic(csvText, api, onProgress) {
-    // Validate format
-    const isValid = validateAmazonMusicFormat(csvText);
-    if (!isValid) {
-        throw new Error("Invalid Amazon Music format");
-    }
+const csv = require('csv-parser');
+const fs = require('fs');
 
-    const tracks = parseCSV(csvText); // Implement CSV parsing logic
-    for (let i = 0; i < tracks.length; i++) {
-        const track = tracks[i];
-        let result;
-        try {
-            // Attempt search by ISRC
-            result = await api.searchByISRC(track.isrc);
-            if (!result) {
-                // Fallback to title + artist search
-                result = await api.searchByTitleAndArtist(track.title, track.artist);
-            }
-            preserveMetadata(result, track);
-            onProgress(i / tracks.length);
-        } catch (error) {
-            console.error(`Error processing track: ${track.title}, ${track.artist}`, error);
-        }
-    }
+// Function to parse Amazon Music CSV
+function parseAmazonMusic(filePath) {
+    return new Promise((resolve, reject) => {
+        const tracks = [];
+        const missingTracks = [];
+        const amazonMetadata = [];
+
+        fs.createReadStream(filePath)
+            .pipe(csv())
+            .on('data', (data) => {
+                if (validateAmazonMusicFormat(data)) {
+                    // Implement ISRC-based matching and title+artist fallback
+                    // Rate limiting would be implemented here
+                    // Assume searchTrack is a function that searches for a track
+                    searchTrack(data.ISRC || data.Title + ' ' + data.Artist)
+                        .then(track => {
+                            if (track) {
+                                tracks.push(track);
+                                amazonMetadata.push({ ISRC: data.ISRC, AmazonID: data.AmazonID, PlaylistName: data.PlaylistName });
+                            } else {
+                                missingTracks.push(data);
+                            }
+                        });
+                }
+            })
+            .on('end', () => {
+                resolve({ tracks, missingTracks, amazonMetadata });
+            })
+            .on('error', (error) => {
+                reject(error);
+            });
+    });
 }
 
-function validateAmazonMusicFormat(csvText) {
-    const requiredColumns = ['title', 'artist', 'isrc'];
-    const headers = csvText.split('\n')[0].split(',');
-    return requiredColumns.every(column => headers.includes(column));
+// Function to validate CSV format
+function validateAmazonMusicFormat(data) {
+    const requiredHeaders = ['ISRC', 'Title', 'Artist', 'AmazonID', 'PlaylistName'];
+    return requiredHeaders.every(header => header in data);
 }
 
-function preserveMetadata(result, track) {
-    result.amazonId = track.amazonId;
-    result.isrc = track.isrc;
-    result.playlistName = track.playlistName;
+// Function to heuristically detect Amazon Music format
+function isAmazonMusicFormat(data) {
+    return data.hasOwnProperty('AmazonID'); // Adjust based on actual format specifics
 }
 
-function parseCSV(csvText) {
-    // Implement robust CSV parsing, handling quotes and errors for missing columns
-    // Return an array of track objects
-}
+module.exports = { parseAmazonMusic, validateAmazonMusicFormat, isAmazonMusicFormat };
